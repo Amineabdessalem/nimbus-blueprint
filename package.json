@@ -1,0 +1,22 @@
+{
+  "name": "nimbus-blueprint",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A serverless REST API on AWS (API Gateway, Lambda, DynamoDB) with a cost model and a load-test harness.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "tsc -p tsconfig.json && node --test \"dist/test/*.test.js\"",
+    "cost": "node dist/src/cli.js",
+    "loadtest": "tsc -p tsconfig.json && node dist/src/loadtest.js"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1168.0",
+    "@aws-sdk/lib-dynamodb": "^3.1168.0"
+  }
+}
