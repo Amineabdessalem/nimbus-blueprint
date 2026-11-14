@@ -5,6 +5,7 @@ import type { Item, ItemRepo } from "./repo.js";
 export interface ApiEvent {
   requestContext: { http: { method: string; path: string } };
   pathParameters?: Record<string, string | undefined>;
+  queryStringParameters?: Record<string, string | undefined>;
   body?: string | null;
   isBase64Encoded?: boolean;
 }
@@ -16,6 +17,8 @@ export interface ApiResult {
 }
 
 const MAX_BODY = 4096;
+const DEFAULT_PAGE = 50;
+const MAX_PAGE = 100;
 
 function json(statusCode: number, payload: unknown): ApiResult {
   return { statusCode, headers: { "content-type": "application/json" }, body: JSON.stringify(payload) };
@@ -44,7 +47,14 @@ export function makeHandler(repo: ItemRepo, now: () => Date = () => new Date()) 
     if (method === "GET" && path === "/health") return json(200, { status: "ok" });
 
     if (path === "/items") {
-      if (method === "GET") return json(200, { items: await (await repo.list(50)).items });
+      if (method === "GET") {
+        const q = event.queryStringParameters ?? {};
+        const limit = q.limit === undefined ? DEFAULT_PAGE : Number(q.limit);
+        if (!Number.isInteger(limit) || limit < 1 || limit > MAX_PAGE) {
+          return json(400, { error: `limit must be an integer from 1 to ${MAX_PAGE}` });
+        }
+        return json(200, await repo.list(limit, q.cursor || undefined));
+      }
       if (method === "POST") {
         const text = event.body ?? "";
         if (Buffer.byteLength(text) > MAX_BODY) return json(413, { error: "body too large" });

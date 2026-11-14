@@ -70,3 +70,24 @@ test("parseNewItem trims names and checks types", () => {
   assert.deepEqual(parseNewItem({ name: "  a  ", quantity: 0 }), { name: "a", quantity: 0 });
   assert.ok("error" in parseNewItem({ name: "a".repeat(201), quantity: 1 }));
 });
+
+test("GET /items pages with limit and cursor and rejects a bad limit", async () => {
+  const handle = makeHandler(new MemoryRepo(), () => fixed);
+  for (const name of ["one", "two", "three"]) {
+    await handle(ev("POST", "/items", { body: JSON.stringify({ name, quantity: 1 }) }));
+  }
+
+  const first = JSON.parse((await handle(ev("GET", "/items", { queryStringParameters: { limit: "2" } }))).body);
+  assert.equal(first.items.length, 2);
+  assert.ok(first.next);
+
+  const rest = await handle(
+    ev("GET", "/items", { queryStringParameters: { limit: "2", cursor: first.next } }),
+  );
+  const second = JSON.parse(rest.body);
+  assert.equal(second.items.length, 1);
+  assert.equal(second.next, undefined);
+
+  const bad = await handle(ev("GET", "/items", { queryStringParameters: { limit: "0" } }));
+  assert.equal(bad.statusCode, 400);
+});
