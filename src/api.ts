@@ -44,7 +44,7 @@ export function makeHandler(repo: ItemRepo, now: () => Date = () => new Date()) 
     if (method === "GET" && path === "/health") return json(200, { status: "ok" });
 
     if (path === "/items") {
-      if (method === "GET") return json(200, { items: await repo.list(50) });
+      if (method === "GET") return json(200, { items: await (await repo.list(50)).items });
       if (method === "POST") {
         const text = event.body ?? "";
         if (Buffer.byteLength(text) > MAX_BODY) return json(413, { error: "body too large" });
